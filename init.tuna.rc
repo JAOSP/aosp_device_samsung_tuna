@@ -30,7 +30,6 @@ on post-fs-data
 	# camera calibration
 	mkdir /data/misc/camera 0770 media media
 	mkdir /data/misc/camera/R5_MVEN003_LD2_ND0_IR0_SH0_FL1_SVEN003_DCCID1044 0770 media media
-	restorecon /data/misc/camera
 
 	mkdir /data/radio 0775 radio radio
 	mkdir /data/radio/log 0775 radio radio
@@ -110,8 +109,6 @@ on fs
 	chmod 0660 /sys/class/rfkill/rfkill0/state
 	chown bluetooth bluetooth /sys/class/rfkill/rfkill0/state
 	chown bluetooth bluetooth /sys/class/rfkill/rfkill0/type
-	restorecon /sys/class/rfkill/rfkill0/state
-	restorecon /sys/class/rfkill/rfkill0/type
 
 # backlight
 	chown system system /sys/class/backlight/s6e8aa0/brightness
@@ -175,7 +172,7 @@ service smc_pa_wvdrm /system/bin/smc_pa_ctrl \
         oneshot
 
 # virtual sdcard daemon running as media_rw (1023)
-service sdcard /system/bin/sdcard /data/media /mnt/shell/emulated 1023 1023
+service sdcard /system/bin/sdcard -u 1023 -g 1023 -l /data/media /mnt/shell/emulated
     class late_start
 
 service p2p_supplicant /system/bin/wpa_supplicant \
@@ -183,7 +180,8 @@ service p2p_supplicant /system/bin/wpa_supplicant \
 	-I/system/etc/wifi/wpa_supplicant_overlay.conf -N \
 	-ip2p0 -Dnl80211 -c/data/misc/wifi/p2p_supplicant.conf \
 	-I/system/etc/wifi/wpa_supplicant_overlay.conf \
-	-e/data/misc/wifi/entropy.bin -puse_p2p_group_interface=1
+    -O/data/misc/wifi/sockets -puse_p2p_group_interface=1 \
+    -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
 	#   we will start as root and wpa_supplicant will switch to user wifi
 	#   after setting up the capabilities required for WEXT
 	#   user wifi
@@ -196,7 +194,8 @@ service p2p_supplicant /system/bin/wpa_supplicant \
 service wpa_supplicant /system/bin/wpa_supplicant \
 	-iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
 	-I/system/etc/wifi/wpa_supplicant_overlay.conf \
-	-e/data/misc/wifi/entropy.bin
+    -O/data/misc/wifi/sockets \
+    -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
 	#   we will start as root and wpa_supplicant will switch to user wifi
 	#   after setting up the capabilities required for WEXT
 	#   user wifi
